@@ -1,0 +1,91 @@
+apiVersion: tekton.dev/v1alpha1
+kind: Task
+metadata:
+  name: test-task
+spec:
+  params:
+    # These may be overridden, but provide sensible defaults.
+    - name: directory
+      type: string
+      description: The directory containing the build context.
+      default: /workspace/git-repo
+    - name: dockerfileName
+      type: string
+      description: The name of the Dockerfile
+      default: pprach/privaterepo
+  resources:
+    inputs:
+      - name: git-repo
+        type: git
+#    outputs:
+#      - name: builtImage
+#        type: image
+  steps:
+    - name: test-endpoint
+      image: curlimages/curl
+      workingDir: "$(params.directory)"
+      script: |
+        #!/usr/bin/env sh
+        res=$(curl -s -o /dev/null -w "%{http_code}" go-app-gotest.dev:80/check)
+        echo $res
+        if [ $res -ne "200" ]; then echo "failed"; exit 1; else echo "success"; fi
+      volumeMounts:
+        - name: docker-socket
+          mountPath: /var/run/docker.sock
+    - name: dockertag-create
+      image: pprach/test:git-0.0.2
+      workingDir: "$(params.directory)"
+      env:
+      - name: secret_env
+        valueFrom:
+          secretKeyRef:
+            name: mysecret
+            key: token
+      script: |
+        #!/usr/bin/env bash
+        date > date
+        git config --global user.email bot.github@pprach.pl
+        git config --global user.name "Github Bot pprach"
+        branch=$(date +%s)
+        git checkout -b test/$branch
+        git add .
+        git commit -m "push from pipeline"
+        git push https://pprach:$secret_env@github.com/pprach/gotest-version.git test/$branch
+      volumeMounts:
+        - name: docker-socket
+          mountPath: /var/run/docker.sock
+#    - name: deploy
+#      image: alpine/helm:3.1.1
+#      workingDir: "$(params.directory)"
+#      script: |
+#        #!/usr/bin/env sh
+#        ls -l 
+#        echo ""
+#        helm upgrade go-app ./helm/gotest -i --set imagePullSecrets[0].name=regcred --set image.repository=$(params.dockerfileName)  --set image.version=$(cat git_sha) -n dev
+#      volumeMounts:
+#        - name: docker-socket
+#          mountPath: /var/run/docker.sock
+#    - name: dockerimage-push
+#      image: docker:dind
+#      workingDir: "$(params.directory)"
+#      script: |
+#        #!/usr/bin/env sh
+#        docker push $(params.dockerfileName):$(cat git_sha)
+#      volumeMounts:
+#        - name: docker-socket
+#          mountPath: /var/run/docker.sock
+
+
+#    - name: dockerfile-push
+#      image: gcr.io/cloud-builders/docker
+#      args: ["push", "$(resources.outputs.image.url)"]
+#      volumeMounts:
+#        - name: docker-socket
+#          mountPath: /var/run/docker.sock
+
+  # As an implementation detail, this Task mounts the host's daemon socket.
+  volumes:
+    - name: docker-socket
+      hostPath:
+        path: /var/run/docker.sock
+        type: Socket
