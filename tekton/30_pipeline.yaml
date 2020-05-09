@@ -1,0 +1,39 @@
+apiVersion: tekton.dev/v1alpha1
+kind: Pipeline
+metadata:
+  name: app-build-pipeline
+spec:
+  params:
+    - name: ref
+  resources:
+    - name: source-repo
+      type: git
+  tasks:
+    - name: build-app-dockerimage
+      taskRef:
+        name: build-task
+      resources:
+        inputs:
+        - name: source-repo
+          resource: source-repo
+      params:
+        - name: ref
+          value: $(params.ref)
+#    - name: deploy-app
+#      taskRef:
+#        name: deploy-task
+#      runAfter:
+#      - build-app-dockerimage
+#      resources:
+#        inputs:
+#        - name: git-repo
+#          resource: git-repo
+#    - name: test-app
+#      taskRef:
+#        name: test-task
+#      runAfter:
+#      - deploy-app
+#      resources:
+#        inputs:
+#        - name: git-repo
+#          resource: git-repo
