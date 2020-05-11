@@ -29,12 +29,13 @@ spec:
         #!/usr/bin/env sh
         branch=$(echo "$(params.ref)" | awk -F '/' '{print $3}')
         if [ "$branch" = "develop" ] ; then
-          sed -i '9s/.*/  version: "$(params.sha)"/' dev.yaml
+          sed -i '9s/.*/  version: "$(params.sha)"/' helm/gotest/dev.yaml
           git config --global user.email bot.github@pprach.pl
           git config --global user.name "Github Bot pprach"
           git add .
           git commit -m "push from pipeline"
-          git push https://pprach:$secret_env@github.com/pprach/gotest_infra.git HEAD:master > /dev/null 0>&1 2>&1
+          git push https://pprach:$secret_env@github.com/pprach/gotest_infra.git HEAD:develop > /dev/null 0>&1 2>&1
+          echo "Pushed to git"
         else
           echo "Nothing to do. Bye!"
         fi;
