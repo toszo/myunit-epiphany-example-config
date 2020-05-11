@@ -6,7 +6,7 @@ replicaCount: 1
 
 image:
   repository: pprach/test
-  version: "c340bd77064748548c6976e809826556139a55b6"
+  version: "ac7a7c77b1c00fb83df89bc6bc721ef1e0f8007e"
   pullPolicy: Always
 
 imagePullSecrets: []
