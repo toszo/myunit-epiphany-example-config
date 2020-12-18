@@ -15,7 +15,7 @@ spec:
         name: gotest
     spec:
       containers:
-      - image: pprach/test:go-0.0.1
+      - image: toszo/myunit-epiphany-example-code #it will pull latest
         imagePullPolicy: Always
         name: gotest
         ports:
